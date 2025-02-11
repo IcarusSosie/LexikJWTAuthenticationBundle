@@ -5,9 +5,12 @@ namespace Lexik\Bundle\JWTAuthenticationBundle\Subscriber;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Clock\ClockAwareTrait;
 
 final class AdditionalAccessTokenClaimsAndHeaderSubscriber implements EventSubscriberInterface
 {
+    use ClockAwareTrait;
+
     /**
      * @var int|null
      */
@@ -31,12 +34,12 @@ final class AdditionalAccessTokenClaimsAndHeaderSubscriber implements EventSubsc
     {
         $claims = [
             'jti' => uniqid('', true),
-            'iat' => time(),
-            'nbf' => time(),
+            'iat' => $this->now()->getTimestamp(),
+            'nbf' => $this->now()->getTimestamp(),
         ];
         $data = $event->getData();
         if (!array_key_exists('exp', $data) && $this->ttl > 0) {
-            $claims['exp'] = time() + $this->ttl;
+            $claims['exp'] = $this->now()->getTimestamp() + $this->ttl;
         }
         $event->setData(array_merge($claims, $data));
     }

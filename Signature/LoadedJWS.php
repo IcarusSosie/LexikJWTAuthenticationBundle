@@ -2,6 +2,8 @@
 
 namespace Lexik\Bundle\JWTAuthenticationBundle\Signature;
 
+use Psr\Clock\ClockInterface;
+
 /**
  * Object representation of a JSON Web Signature loaded from an
  * existing JSON Web Token.
@@ -14,14 +16,23 @@ final class LoadedJWS
     public const EXPIRED = 'expired';
     public const INVALID = 'invalid';
 
+    private ClockInterface $clock;
     private array $header;
     private array $payload;
     private ?string $state = null;
     private int $clockSkew;
     private bool $shouldCheckExpiration;
 
-    public function __construct(array $payload, bool $isVerified, bool $shouldCheckExpiration = true, array $header = [], int $clockSkew = 0)
+    public function __construct(
+        ClockInterface $clock,
+        array $payload,
+        bool $isVerified,
+        bool $shouldCheckExpiration = true,
+        array $header = [],
+        int $clockSkew = 0,
+    )
     {
+        $this->clock = $clock;
         $this->payload = $payload;
         $this->header = $header;
         $this->shouldCheckExpiration = $shouldCheckExpiration;
@@ -74,7 +85,7 @@ final class LoadedJWS
             return;
         }
 
-        if ($this->clockSkew <= time() - $this->payload['exp']) {
+        if ($this->clockSkew <= $this->clock->now()->getTimestamp() - $this->payload['exp']) {
             $this->state = self::EXPIRED;
         }
     }
@@ -84,7 +95,10 @@ final class LoadedJWS
      */
     private function checkIssuedAt(): void
     {
-        if (isset($this->payload['iat']) && (int) $this->payload['iat'] - $this->clockSkew > time()) {
+        if (
+            isset($this->payload['iat'])
+            && (int) $this->payload['iat'] - $this->clockSkew > $this->clock->now()->getTimestamp()
+        ) {
             $this->state = self::INVALID;
         }
     }

@@ -26,6 +26,7 @@ use Lcobucci\JWT\Validation\Validator;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\KeyLoader\KeyLoaderInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Signature\CreatedJWS;
 use Lexik\Bundle\JWTAuthenticationBundle\Signature\LoadedJWS;
+use Symfony\Component\Clock\ClockAwareTrait;
 
 /**
  * @final
@@ -34,8 +35,9 @@ use Lexik\Bundle\JWTAuthenticationBundle\Signature\LoadedJWS;
  */
 class LcobucciJWSProvider implements JWSProviderInterface
 {
+    use ClockAwareTrait;
+
     private KeyLoaderInterface $keyLoader;
-    private Clock $clock;
     private Signer $signer;
     private ?int $ttl;
     private ?int $clockSkew;
@@ -44,14 +46,15 @@ class LcobucciJWSProvider implements JWSProviderInterface
     /**
      * @throws \InvalidArgumentException If the given crypto engine is not supported
      */
-    public function __construct(KeyLoaderInterface $keyLoader, string $signatureAlgorithm, ?int $ttl, ?int $clockSkew, bool $allowNoExpiration = false, ?Clock $clock = null)
+    public function __construct(
+        KeyLoaderInterface $keyLoader,
+        string $signatureAlgorithm,
+        ?int $ttl,
+        ?int $clockSkew,
+        bool $allowNoExpiration = false,
+    )
     {
-        if (null === $clock) {
-            $clock = new SystemClock(new \DateTimeZone('UTC'));
-        }
-
         $this->keyLoader = $keyLoader;
-        $this->clock = $clock;
         $this->signer = $this->getSignerForAlgorithm($signatureAlgorithm);
         $this->ttl = $ttl;
         $this->clockSkew = $clockSkew;
@@ -69,7 +72,7 @@ class LcobucciJWSProvider implements JWSProviderInterface
             $jws = $jws->withHeader($k, $v);
         }
 
-        $now = time();
+        $now = $this->now()->getTimestamp();
 
         $issuedAt = $payload['iat'] ?? $now;
         unset($payload['iat']);
@@ -118,6 +121,7 @@ class LcobucciJWSProvider implements JWSProviderInterface
         }
 
         return new LoadedJWS(
+            $this->clock,
             $payload,
             $this->verify($jws),
             false == $this->allowNoExpiration,

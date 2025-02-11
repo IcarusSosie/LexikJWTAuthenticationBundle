@@ -5,12 +5,16 @@ namespace Lexik\Bundle\JWTAuthenticationBundle\Security\Http\Cookie;
 use Lexik\Bundle\JWTAuthenticationBundle\Helper\JWTSplitter;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Clock\ClockAwareTrait;
+
 
 /**
  * Creates secure JWT cookies.
  */
 final class JWTCookieProvider
 {
+    use ClockAwareTrait;
+
     private ?string $defaultName;
     private ?int $defaultLifetime;
     private ?string $defaultSameSite;
@@ -21,7 +25,17 @@ final class JWTCookieProvider
     private array $defaultSplit;
     private bool $defaultPartitioned;
 
-    public function __construct(?string $defaultName = null, ?int $defaultLifetime = 0, ?string $defaultSameSite = Cookie::SAMESITE_LAX, ?string $defaultPath = '/', ?string $defaultDomain = null, bool $defaultSecure = true, bool $defaultHttpOnly = true, array $defaultSplit = [], bool $defaultPartitioned = false)
+    public function __construct(
+        ?string $defaultName = null,
+        ?int $defaultLifetime = 0,
+        ?string $defaultSameSite = Cookie::SAMESITE_LAX,
+        ?string $defaultPath = '/',
+        ?string $defaultDomain = null,
+        bool $defaultSecure = true,
+        bool $defaultHttpOnly = true,
+        array $defaultSplit = [],
+        bool $defaultPartitioned = false,
+    )
     {
         $this->defaultName = $defaultName;
         $this->defaultLifetime = $defaultLifetime;
@@ -62,7 +76,9 @@ final class JWTCookieProvider
         $jwt = $jwtParts->getParts($split ?: $this->defaultSplit);
 
         if (null === $expiresAt) {
-            $expiresAt = 0 === $this->defaultLifetime ? 0 : (time() + $this->defaultLifetime);
+            $expiresAt = 0 === $this->defaultLifetime
+                ? 0
+                : ($this->now()->getTimestamp() + $this->defaultLifetime);
         }
 
         return Cookie::create(
