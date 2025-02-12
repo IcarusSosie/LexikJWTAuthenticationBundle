@@ -11,6 +11,9 @@
         </service>
         <service id="lexik_jwt_authentication.subscriber.access_token_time" class="Lexik\Bundle\JWTAuthenticationBundle\Subscriber\AdditionalAccessTokenClaimsAndHeaderSubscriber" public="false">
             <argument on-invalid="null">%lexik_jwt_authentication.token_ttl%</argument>
+            <call method="setClock">
+                <argument type="service" id="clock"/>
+            </call>
             <tag name="kernel.event_subscriber" />
         </service>
     </services>

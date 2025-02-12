@@ -16,6 +16,9 @@
             <argument>%lexik_jwt_authentication.token_ttl%</argument>
             <argument>%lexik_jwt_authentication.clock_skew%</argument>
             <argument>%lexik_jwt_authentication.allow_no_expiration%</argument>
+            <call method="setClock">
+                <argument type="service" id="clock"/>
+            </call>
         </service>
     </services>
 </container>

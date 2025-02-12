@@ -15,6 +15,9 @@
             <argument/> <!-- Default httpOnly -->
             <argument>null</argument> <!-- Default split -->
             <argument>false</argument> <!-- Default partitioned -->
+            <call method="setClock">
+                <argument type="service" id="clock"/>
+            </call>
         </service>
     </services>
 </container>
