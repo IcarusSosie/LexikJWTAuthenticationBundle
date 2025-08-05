@@ -2,12 +2,9 @@
 
 namespace Lexik\Bundle\JWTAuthenticationBundle\Services\JWSProvider;
 
-use Lcobucci\Clock\Clock;
-use Lcobucci\Clock\SystemClock;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Encoding\ChainedFormatter;
 use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Signer\Ecdsa;
 use Lcobucci\JWT\Signer\Hmac;
@@ -26,6 +23,8 @@ use Lcobucci\JWT\Validation\Validator;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\KeyLoader\KeyLoaderInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Signature\CreatedJWS;
 use Lexik\Bundle\JWTAuthenticationBundle\Signature\LoadedJWS;
+use Psr\Clock\ClockInterface;
+use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\Clock\ClockAwareTrait;
 
 /**
@@ -52,9 +51,13 @@ class LcobucciJWSProvider implements JWSProviderInterface
         ?int $ttl,
         ?int $clockSkew,
         bool $allowNoExpiration = false,
+        ?ClockInterface $clock = null,
     )
     {
         $this->keyLoader = $keyLoader;
+        if ($clock instanceof ClockInterface) {
+            $this->setClock($clock);
+        }
         $this->signer = $this->getSignerForAlgorithm($signatureAlgorithm);
         $this->ttl = $ttl;
         $this->clockSkew = $clockSkew;
